@@ -1,3 +1,4 @@
+import math
 import numpy
 import sympy
 def _round_trad(value:float, n:int=0):
@@ -5,9 +6,8 @@ def _round_trad(value:float, n:int=0):
     if value > 0:
         return int(value*pow(10, n) + 0.5)/pow(10, n)
     else:
-        return int(value*pow(10, n) - 0.5)/pow(10, n)    
+        return int(value*pow(10, n) - 0.5)/pow(10, n)
 
-#나중에 단순 사칙 연산은 ufunc을 사용하지 않고 계산할 수 있게 매서드 추가
 class ufloat:    
     def __init__(self, value:numpy.float64, uncertainty:numpy.float64, unit:str = '') -> None:
         self.value = value
@@ -71,20 +71,134 @@ class ufloat:
             self._formstr = "$({} ± {})\ \mathrm{{" + self.unit + "}}$"
             self._formPstr = "$({} \pm {})\ \\times 10^{{{}}}\ \mathrm{{" + self.unit + "}}$"
         return self.__to_str()
+    
+    def set_unit(self, unit:str):
+        self.unit = unit
+        return self
+    
+    def __pos__(self):
+        return self
+    
+    def __neg__(self):
+        temp = ufloat(0, 0)
+        temp.value = 0 - self.value
+        temp.uncertainty = self.uncertainty
+        temp.unit = self.unit
+        return temp
+    
+    def add(self, other):
+        temp = ufloat(0, 0)
+        if type(other) == type(self):
+            temp.value = self.value + other.value
+            temp.uncertainty = math.sqrt(self.uncertainty**2 + other.uncertainty**2)
+        else:
+            temp.value = self.value + other
+            temp.uncertainty = self.uncertainty
+            temp.unit = self.unit
+        return temp
+    
+    def __add__(self, other):
+        return self.add(other)
+    
+    def __radd__(self, other):
+        return self.add(other)
+    
+    
+    def sub(self, other):
+        temp = ufloat(0, 0)
+        if type(other) == type(self):
+            temp.value = self.value - other.value
+            temp.uncertainty = math.sqrt(self.uncertainty**2 + other.uncertainty**2)
+        else:
+            temp.value = self.value - other
+            temp.uncertainty = self.uncertainty
+            temp.unit = self.unit
+        return temp
+    
+    def __sub__(self, other):
+        return self.sub(other)
+    
+    def __rsub__(self, other):
+        temp = ufloat(0, 0)
+        if type(other) == type(self):
+            temp.value =  other.value - self.value
+            temp.uncertainty = math.sqrt(self.uncertainty**2 + other.uncertainty**2)
+        else:
+            temp.value = other - self.value
+            temp.uncertainty = self.uncertainty
+            temp.unit = self.unit
+        return temp
+    
+    
+    
+    def mul(self, other):
+        temp = ufloat(0, 0)
+        if type(other) == type(self):
+            temp.value = self.value * other.value
+            temp.uncertainty = math.sqrt( (self.uncertainty/self.value)**2 + (other.uncertainty/other.value)**2 )
+        else:
+            temp.value = self.value * other
+            temp.uncertainty = self.uncertainty * other
+            temp.unit = self.unit
+        return temp
+    
+    def __mul__(self, other):
+        return self.mul(other)
+    
+    def __rmul__(self, other):
+        return self.mul(other)
+    
+    
+    def div(self, other):
+        temp = ufloat(0, 0)
+        if type(other) == type(self):
+            temp.value = self.value / other.value
+            temp.uncertainty = math.sqrt( ((self.uncertainty/self.value)**2 + (other.uncertainty/other.value)**2)*temp.value**2 )
+        else:
+            temp.value = self.value / other
+            temp.uncertainty = self.uncertainty / other
+            temp.unit = self.unit
+        return temp
+    
+    def __truediv__(self, other):
+        return self.div(other)
+    
+    def rdiv(self, other):
+        temp = ufloat(0, 0)
+        if type(other) == type(self):
+            temp.value = other.value / self.value
+            temp.uncertainty = math.sqrt( ((self.uncertainty/self.value)**2 + (other.uncertainty/other.value)**2)*temp.value**2 )
+        else:
+            temp.value = other / self.value
+            temp.uncertainty = abs(self.uncertainty/(self.value**2))
+            temp.unit = self.unit
+        return temp
+    
+    def __rtruediv__(self, other):
+        return self.rdiv(other)
+        
+    def __pow__(self, n):
+        if n == 1: return self
+        
+        temp = ufloat(0, 0)
+        temp.value = self.value**n
+        temp.uncertainty = numpy.abs(n * (self.value*self.uncertainty)**(n-1))
+        return temp
 
-def symbols(symbol:str):
-    """sympy symbols
+def set_unit(x:ufloat, unit:str):
+    x.unit = unit
+    return x
 
-    Args:
-        symbol (str): symbol string
-
-    Returns:
-        Sympy.symbol: Sympy symbols
-    """
-    return sympy.symbols(symbol)
+#불확도 계산도 연쇄가 되니, sin, cos 이런거 다 만들면 sympy 안빌려도 되는거 아님?
 
 class ufunc:
     def __init__(self, function, symbols:list):
+        """ufunc
+
+        Args:
+            function (Sympy.symbol): Sympy symbol function
+            symbols (list): Sympy symbol list
+        """
         self.function = function
         self.symbols = symbols
         
