@@ -1,6 +1,7 @@
 import math
 import numpy
 import sympy
+
 def _round_trad(value:float, n:int=0):
     if n < 0: n = 0
     if value > 0:
@@ -135,7 +136,7 @@ class ufloat:
         temp = ufloat(0, 0)
         if type(other) == type(self):
             temp.value = self.value * other.value
-            temp.uncertainty = math.sqrt( (self.uncertainty/self.value)**2 + (other.uncertainty/other.value)**2 )
+            temp.uncertainty = math.sqrt( (other.value*self.uncertainty)**2 + (self.value*other.uncertainty)**2 )
         else:
             temp.value = self.value * other
             temp.uncertainty = self.uncertainty * other
@@ -182,7 +183,7 @@ class ufloat:
         
         temp = ufloat(0, 0)
         temp.value = self.value**n
-        temp.uncertainty = numpy.abs(n * (self.value*self.uncertainty)**(n-1))
+        temp.uncertainty = abs(n*(self.value)**(n-1))*self.uncertainty
         return temp
 
 def set_unit(x:ufloat, unit:str):
@@ -204,6 +205,12 @@ class ufunc:
         
         self.partials = []
         for x in self.symbols: self.partials.append(self.function.diff(x).simplify())
+        
+    def __repr__(self):
+        return str(self.function)
+    
+    def _repr_latex_(self):
+        return self.function._repr_latex_()
     
     def caculate(self, ufloats:list, unit = ''):
         if(len(self.partials) != len(ufloats)): raise ValueError("Missing Variables")
