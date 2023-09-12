@@ -18,19 +18,35 @@ class ufloat:
     def __repr__(self):
         return str(self)
     
-    def __str__(self):
-        if self.unit == '':
-            self._formstr = "{} ± {}"
-            self._formPstr = "({} ± {})×10^{}"
-        else:
-            self._formstr = "({} ± {}) " + self.unit
-            self._formPstr = "({} ± {})×10^{} " + self.unit
+    def __get_ustr(self, num:str, unum:str, n:int)->str:
+        if n == 0:
+            if self.unit == '': return f"{num} ± {unum}"
+            else: return f"({num} ± {unum}) " + self.unit
+            
+        elif n == 1:
+            if self.unit == '': return f"({num} ± {unum})x10"
+            else: return f"({num} ± {unum})x10 " + self.unit
         
-        return self.__to_str()
+        else:
+            if self.unit == '': return f"({num} ± {unum})x10^{n}"
+            else: return f"({num} ± {unum})x10^{n} " + self.unit
     
-    def __to_str(self)->str:
+    def __get_ustr_latex(self, num:str, unum:str, n:int)->str:
+        if n == 0:
+            if self.unit == '': return f"${num} \pm {unum}$"
+            else: return f"$({num} \pm {unum})\ \mathrm{{{self.unit}}}$"
+            
+        elif n == 1:
+            if self.unit == '': return f"$({num} \pm {unum})\\times 10$"
+            else: return f"$({num} \pm {unum})\\times 10\ \mathrm{{{self.unit}}}$"
+        
+        else:
+            if self.unit == '': return f"$({num} \pm {unum})\ \\times 10^{{{n}}}$"
+            else: return f"$({num} \pm {unum})\ \\times 10^{{{n}}}\ \mathrm{{{self.unit}}}$"
+    
+    def __parsing_str(self):
+        n = 0
         if _round_trad(self.uncertainty) < 1:
-            n = 0
             while _round_trad(self.uncertainty, n) == 0:n+=1
             
             if n < 4:
@@ -38,40 +54,30 @@ class ufloat:
                 unum = _round_trad(self.uncertainty, n)
                 decinum = len(str(num))-len(str(int(num)))-1 #num의 소숫점 자릿수
                 if decinum < n: num = str(num) + '0'*(n-decinum) #불확도와 소숫점 자릿수 맞추기
-                return self._formstr.format(num, unum)
             
             else:
                 num = _round_trad(self.value*pow(10, n))
                 unum = _round_trad(self.uncertainty*pow(10, n))
-                return self._formPstr.format(num, unum, n)
         
         elif _round_trad(self.uncertainty) < 10:
             unum = int(_round_trad(self.uncertainty))
             num = int(_round_trad(self.value))
-            return self._formstr.format(num, unum)
         
         else:
-            n = 0
             while self.uncertainty/pow(10, n) > 1.0: n+=1
-            
-            if n < 4:
-                num = _round_trad(self.value/pow(10,n))*pow(10, n)
-                unum = _round_trad(self.uncertainty/pow(10,n))*pow(10, n)
-                return self._formstr.format(num, unum)
-            
-            else:
-                num = _round_trad(self.value/pow(10,n))
-                unum = _round_trad(self.uncertainty/pow(10,n))
-                return self._formPstr.format(num, unum, n)
+            n-=1
+            num = int(_round_trad(self.value/pow(10,n)))
+            unum = int(_round_trad(self.uncertainty/pow(10,n)))
+        
+        return num, unum, n
+    
+    def __str__(self):
+        num, unum, n = self.__parsing_str()
+        return self.__get_ustr(num, unum, n)         
     
     def to_latex(self)->str:
-        if self.unit == '':
-            self._formstr = "${} \pm {}$"
-            self._formPstr = "$({} \pm {})\ \\times 10^{{{}}}$"
-        else:
-            self._formstr = "$({} ± {})\ \mathrm{{" + self.unit + "}}$"
-            self._formPstr = "$({} \pm {})\ \\times 10^{{{}}}\ \mathrm{{" + self.unit + "}}$"
-        return self.__to_str()
+        num, unum, n = self.__parsing_str()
+        return self.__get_ustr_latex(num, unum, n)
     
     def set_unit(self, unit:str):
         self.unit = unit
@@ -190,7 +196,32 @@ def set_unit(x:ufloat, unit:str):
     x.unit = unit
     return x
 
-#불확도 계산도 연쇄가 되니, sin, cos 이런거 다 만들면 sympy 안빌려도 되는거 아님?
+def exp(x):
+    temp = ufloat(0, 0)
+    if type(x) == type(temp):
+        temp.value = math.exp(x.value)
+        temp.uncertainty = temp.value * x.uncertainty
+        return temp
+    
+    else:
+        return math.exp(x)
+
+def log(x, base = math.e):
+    temp = ufloat(0, 0)
+    if type(x) == type(temp):
+        if x.value <= 0.0: raise ValueError("math domain error")
+        temp.value = math.log(x.value, base)
+        temp.uncertainty = abs(x.uncertainty/(x.value*math.log(base)))
+        return temp
+    else:
+        if x <= 0.0: raise ValueError("math domain error")
+        return math.log(x, base)
+
+def log10(x):
+    return log(x, 10)
+
+def log2(x):
+    return log(x, 2)
 
 class ufunc:
     def __init__(self, function, symbols:list):
@@ -216,7 +247,7 @@ class ufunc:
         if(len(self.partials) != len(ufloats)): raise ValueError("Missing Variables")
         
         symbol_dict = {symbol:ufloats[i].value for i, symbol in enumerate(self.symbols) }
-        value = self.function.subs(symbol_dict)
+        value = float(self.function.subs(symbol_dict))
         uvalue = 0
         for i, iter in enumerate(self.partials): uvalue += (iter.subs(symbol_dict)*ufloats[i].uncertainty)**2
         uvalue = float(sympy.sqrt(uvalue))
