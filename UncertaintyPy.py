@@ -11,6 +11,9 @@ def _round_trad(value:float, n:int=0):
 
 class ufloat:    
     def __init__(self, value:numpy.float64, uncertainty:numpy.float64, unit:str = '') -> None:
+        if not type(unit) is str:
+            raise TypeError("unit must be str")
+        
         self.value = value
         self.uncertainty = uncertainty
         self.unit = unit
@@ -44,39 +47,39 @@ class ufloat:
             if self.unit == '': return f"$({num} \pm {unum})\ \\times 10^{{{n}}}$"
             else: return f"$({num} \pm {unum})\ \\times 10^{{{n}}}\ \mathrm{{{self.unit}}}$"
     
-    def __parsing_str(self):
+    def __parsing_to_str(self):
         n = 0
-        if _round_trad(self.uncertainty) < 1:
+        if _round_trad(self.uncertainty) < 1.0:
             while _round_trad(self.uncertainty, n) == 0:n+=1
             
             if n < 4:
                 num = _round_trad(self.value, n)
                 unum = _round_trad(self.uncertainty, n)
-                decinum = len(str(num))-len(str(int(num)))-1 #num의 소숫점 자릿수
-                if decinum < n: num = str(num) + '0'*(n-decinum) #불확도와 소숫점 자릿수 맞추기
+                decinum = len(str(num))-len(str(int(num)))-1 #num의 소숫점 자릿수 = char수 - 정수부 - 소수점
+                if decinum < n: num = str(num) + '0'*(n-decinum) #불확도와 소숫점 자릿수 맞추기, 반올림되면 2.1 ± 0.01이 될 수 있음
             
             else:
-                num = _round_trad(self.value*pow(10, n))
-                unum = _round_trad(self.uncertainty*pow(10, n))
+                num = int(_round_trad(self.value*pow(10, n)))
+                unum = int(_round_trad(self.uncertainty*pow(10, n)))
         
-        elif _round_trad(self.uncertainty) < 10:
+        elif _round_trad(self.uncertainty) < 10.0:
             unum = int(_round_trad(self.uncertainty))
             num = int(_round_trad(self.value))
         
         else:
-            while self.uncertainty/pow(10, n) > 1.0: n+=1
-            n-=1
+            while self.uncertainty/pow(10, n) >= 1.0: n+=1 #불확도가 10의 거듭제곱인 경우 1.0이 나올 수 있으니
+            if n > 1: n-=1
             num = int(_round_trad(self.value/pow(10,n)))
             unum = int(_round_trad(self.uncertainty/pow(10,n)))
         
         return num, unum, n
     
     def __str__(self):
-        num, unum, n = self.__parsing_str()
+        num, unum, n = self.__parsing_to_str()
         return self.__get_ustr(num, unum, n)         
     
     def to_latex(self)->str:
-        num, unum, n = self.__parsing_str()
+        num, unum, n = self.__parsing_to_str()
         return self.__get_ustr_latex(num, unum, n)
     
     def set_unit(self, unit:str):
@@ -95,13 +98,12 @@ class ufloat:
     
     def add(self, other):
         temp = ufloat(0, 0)
-        if type(other) == type(self):
+        if type(other) is ufloat:
             temp.value = self.value + other.value
             temp.uncertainty = math.sqrt(self.uncertainty**2 + other.uncertainty**2)
         else:
             temp.value = self.value + other
             temp.uncertainty = self.uncertainty
-            temp.unit = self.unit
         return temp
     
     def __add__(self, other):
@@ -113,13 +115,12 @@ class ufloat:
     
     def sub(self, other):
         temp = ufloat(0, 0)
-        if type(other) == type(self):
+        if type(other) is ufloat:
             temp.value = self.value - other.value
             temp.uncertainty = math.sqrt(self.uncertainty**2 + other.uncertainty**2)
         else:
             temp.value = self.value - other
             temp.uncertainty = self.uncertainty
-            temp.unit = self.unit
         return temp
     
     def __sub__(self, other):
@@ -127,7 +128,7 @@ class ufloat:
     
     def __rsub__(self, other):
         temp = ufloat(0, 0)
-        if type(other) == type(self):
+        if type(other) is ufloat:
             temp.value =  other.value - self.value
             temp.uncertainty = math.sqrt(self.uncertainty**2 + other.uncertainty**2)
         else:
@@ -140,7 +141,7 @@ class ufloat:
     
     def mul(self, other):
         temp = ufloat(0, 0)
-        if type(other) == type(self):
+        if type(other) is ufloat:
             temp.value = self.value * other.value
             temp.uncertainty = math.sqrt( (other.value*self.uncertainty)**2 + (self.value*other.uncertainty)**2 )
         else:
@@ -158,7 +159,7 @@ class ufloat:
     
     def div(self, other):
         temp = ufloat(0, 0)
-        if type(other) == type(self):
+        if type(other) is ufloat:
             temp.value = self.value / other.value
             temp.uncertainty = math.sqrt( ((self.uncertainty/self.value)**2 + (other.uncertainty/other.value)**2)*temp.value**2 )
         else:
@@ -172,7 +173,7 @@ class ufloat:
     
     def rdiv(self, other):
         temp = ufloat(0, 0)
-        if type(other) == type(self):
+        if type(other) is ufloat:
             temp.value = other.value / self.value
             temp.uncertainty = math.sqrt( ((self.uncertainty/self.value)**2 + (other.uncertainty/other.value)**2)*temp.value**2 )
         else:
@@ -196,9 +197,10 @@ def set_unit(x:ufloat, unit:str):
     x.unit = unit
     return x
 
+#expotential and logarithm
 def exp(x):
-    temp = ufloat(0, 0)
-    if type(x) == type(temp):
+    if type(x) is ufloat:
+        temp = ufloat(0, 0)
         temp.value = math.exp(x.value)
         temp.uncertainty = temp.value * x.uncertainty
         return temp
@@ -207,9 +209,9 @@ def exp(x):
         return math.exp(x)
 
 def log(x, base = math.e):
-    temp = ufloat(0, 0)
-    if type(x) == type(temp):
+    if type(x) is ufloat:
         if x.value <= 0.0: raise ValueError("math domain error")
+        temp = ufloat(0, 0)
         temp.value = math.log(x.value, base)
         temp.uncertainty = abs(x.uncertainty/(x.value*math.log(base)))
         return temp
@@ -223,9 +225,51 @@ def log10(x):
 def log2(x):
     return log(x, 2)
 
+#sqrt
+def sqrt(x):
+    if type(x) is ufloat:
+        if x.value < 0: raise ValueError("math domain error")
+        temp = ufloat(0, 0)
+        temp.value = math.sqrt(x.value)
+        temp.uncertainty = x.uncertainty/(2*temp.value)
+        return temp
+    else:
+        if x < 0: raise ValueError("math domain error")
+        return math.sqrt(x)
+
+#trigonometry function
+def sin(x):
+    """sin
+
+    Args:
+        x (Any): ufloat or float measured in radian
+    """
+    if type(x) is ufloat:
+        temp = ufloat(0, 0)
+        temp.value = math.sin(x.value)
+        temp.uncertainty = abs(x.uncertainty * math.cos(x.value))
+        return temp
+    else:
+        return math.sin(x)
+
+#inverse trigonometry function
+def csc(x):
+    """csc
+    
+    Args:
+        x (Any): ufloat or float measured in radian
+    """
+    if type(x) is ufloat:
+        temp = ufloat(0, 0)
+        temp.value = 1/math.sin(x.value)
+        temp.uncertainty = abs(x.uncertainty*math.cos(x.value)/(math.sin(x.value))**2)
+        return temp
+    else:
+        return 1/math.sin(x)
+
 class ufunc:
     def __init__(self, function, symbols:list):
-        """ufunc
+        """sympy based ufloat function
 
         Args:
             function (Sympy.symbol): Sympy symbol function
