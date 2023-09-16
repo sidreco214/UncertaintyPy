@@ -57,22 +57,24 @@ class ufloat:
                 unum = _round_trad(self.uncertainty, n)
                 decinum = len(str(num))-len(str(int(num)))-1 #num의 소숫점 자릿수 = char수 - 정수부 - 소수점
                 if decinum < n: num = str(num) + '0'*(n-decinum) #불확도와 소숫점 자릿수 맞추기, 반올림되면 2.1 ± 0.01이 될 수 있음
+                return num, unum, 0
             
             else:
                 num = int(_round_trad(self.value*pow(10, n)))
                 unum = int(_round_trad(self.uncertainty*pow(10, n)))
+                return num, unum, n
         
         elif _round_trad(self.uncertainty) < 10.0:
             unum = int(_round_trad(self.uncertainty))
             num = int(_round_trad(self.value))
+            return num, unum, 0
         
         else:
             while self.uncertainty/pow(10, n) >= 1.0: n+=1 #불확도가 10의 거듭제곱인 경우 1.0이 나올 수 있으니
             if n > 1: n-=1
             num = int(_round_trad(self.value/pow(10,n)))
             unum = int(_round_trad(self.uncertainty/pow(10,n)))
-        
-        return num, unum, n
+            return num, unum, n
     
     def __str__(self):
         num, unum, n = self.__parsing_to_str()
