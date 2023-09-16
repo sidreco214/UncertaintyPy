@@ -186,7 +186,6 @@ class ufloat:
         else:
             temp.value = other / self.value
             temp.uncertainty = abs(self.uncertainty/(self.value**2))
-            temp.unit = self.unit
         return temp
     
     def __rtruediv__(self, other):
@@ -205,7 +204,7 @@ def set_unit(x:ufloat, unit:str):
         x.unit = unit
         return x
     elif type(x) is list or type(x) is numpy.ndarray:
-        return [set_unit(i, unit) for i in x]
+        return numpy.array([set_unit(i, unit) for i in x])
     else: raise TypeError("Error Type")    
 
 #expotential and logarithm
