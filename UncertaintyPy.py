@@ -77,8 +77,13 @@ class ufloat:
             return num, unum, n
     
     def __str__(self):
-        num, unum, n = self.__parsing_to_str()
-        return self.__get_ustr(num, unum, n)         
+        if self.uncertainty == 0.0:
+            if self.unit == '':
+                return str(self.value)
+            else: return "{} {}".format(self.value, self.unit)
+        else:
+            num, unum, n = self.__parsing_to_str()
+            return self.__get_ustr(num, unum, n)         
     
     def to_latex(self)->str:
         num, unum, n = self.__parsing_to_str()
@@ -196,8 +201,12 @@ class ufloat:
         return temp
 
 def set_unit(x:ufloat, unit:str):
-    x.unit = unit
-    return x
+    if type(x) is ufloat:
+        x.unit = unit
+        return x
+    elif type(x) is list or type(x) is numpy.ndarray:
+        return [set_unit(i, unit) for i in x]
+    else: raise TypeError("Error Type")    
 
 #expotential and logarithm
 def exp(x):
