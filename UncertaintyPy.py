@@ -14,6 +14,15 @@ class ufloat:
         if not type(unit) is str:
             raise TypeError("unit must be str")
         
+        if not(type(value) is float or type(value) is int):
+            raise TypeError("value must be number")
+        
+        if not(type(uncertainty) is float or type(uncertainty) is int):
+            raise TypeError("uncertainty must be number")
+        
+        if uncertainty < 0:
+            raise ValueError("uncertainty must be unsigned number")
+        
         self.value = value
         self.uncertainty = uncertainty
         self.unit = unit
@@ -215,6 +224,9 @@ def exp(x):
         temp.uncertainty = temp.value * x.uncertainty
         return temp
     
+    elif type(x) is list or type(x) is numpy.ndarray:
+        return numpy.array([exp(iter) for iter in x])
+    
     else:
         return math.exp(x)
 
@@ -225,6 +237,10 @@ def log(x, base = math.e):
         temp.value = math.log(x.value, base)
         temp.uncertainty = abs(x.uncertainty/(x.value*math.log(base)))
         return temp
+    
+    elif type(x) is list or type(x) is numpy.ndarray:
+        return numpy.array([log(iter) for iter in x])
+    
     else:
         if x <= 0.0: raise ValueError("math domain error")
         return math.log(x, base)
@@ -243,6 +259,10 @@ def sqrt(x):
         temp.value = math.sqrt(x.value)
         temp.uncertainty = x.uncertainty/(2*temp.value)
         return temp
+    
+    elif type(x) is list or type(x) is numpy.ndarray:
+        return numpy.array([sqrt(iter) for iter in x])
+    
     else:
         if x < 0: raise ValueError("math domain error")
         return math.sqrt(x)
@@ -259,10 +279,49 @@ def sin(x):
         temp.value = math.sin(x.value)
         temp.uncertainty = abs(x.uncertainty * math.cos(x.value))
         return temp
+    
+    elif type(x) is list or type(x) is numpy.ndarray:
+        return numpy.array([sin(iter) for iter in x])
+    
     else:
         return math.sin(x)
 
-#inverse trigonometry function
+def cos(x):
+    """cos
+
+    Args:
+        x (Any): ufloat or float measured in radian
+    """
+    if type(x) is ufloat:
+        temp = ufloat(0, 0)
+        temp.value = math.cos(x.value)
+        temp.uncertainty = abs(math.sin(x.value) * x.uncertainty)
+        return temp
+    
+    elif type(x) is list or type(x) is numpy.ndarray:
+        return numpy.array([cos(iter) for iter in x])
+    
+    else:
+        return math.cos(x)
+
+def tan(x):
+    """tan
+
+    Args:
+        x (Any): ufloat or float measured in radian
+    """
+    if type(x) is ufloat:
+        temp = ufloat(0, 0)
+        temp.value = math.tan(x.value)
+        temp.uncertainty = abs(x.uncertainty/math.cos(x.value)**2)
+        return temp
+    
+    elif type(x) is list or type(x) is numpy.ndarray:
+        return numpy.array([tan(iter) for iter in x])
+    
+    else:
+        return math.tan(x)
+
 def csc(x):
     """csc
     
@@ -274,9 +333,160 @@ def csc(x):
         temp.value = 1/math.sin(x.value)
         temp.uncertainty = abs(x.uncertainty*math.cos(x.value)/(math.sin(x.value))**2)
         return temp
+    
+    elif type(x) is list or type(x) is numpy.ndarray:
+        return numpy.array([csc(iter) for iter in x])
+    
     else:
         return 1/math.sin(x)
 
+
+def sec(x):
+    """sec
+    
+    Args:
+        x (Any): ufloat or float measured in radian
+    """
+    if type(x) is ufloat:
+        temp = ufloat(0, 0)
+        temp.value = 1/math.cos(x.value)
+        temp.uncertainty = abs(x.uncertainty*math.sin(x.value)/(math.cos(x.value))**2)
+        return temp
+    
+    elif type(x) is list or type(x) is numpy.ndarray:
+        return numpy.array([sec(iter) for iter in x])
+    
+    else:
+        return 1/math.cos(x)
+
+def cot(x):
+    """cot
+    
+    Args:
+        x (Any): ufloat or float measured in radian
+    """
+    if type(x) is ufloat:
+        temp = ufloat(0, 0)
+        temp.value = 1/math.tan(x.value)
+        temp.uncertainty = abs(x.uncertainty/math.sin(x.value)**2)
+        return temp
+    
+    elif type(x) is list or type(x) is numpy.ndarray:
+        return numpy.array([cot(iter) for iter in x])
+    
+    else:
+        return 1/math.tan(x)
+
+#inverse trigonometry function
+def asin(x):
+    """Return the arc sine\nThe result is between -pi/2 and pi/2
+    
+    Args:
+        x (Any): ufloat or float measured in radian
+    """
+    if type(x) is ufloat:
+        temp = ufloat(0, 0)
+        temp.value = math.asin(x.value)
+        temp.uncertainty = x.uncertainty/math.sqrt(1-x.value**2)
+        return temp
+    
+    elif type(x) is list or type(x) is numpy.ndarray:
+        return numpy.array([asin(iter) for iter in x])
+    
+    else:
+        return math.asin(x)
+
+def acos(x):
+    """Return the arc cosine.\nThe result is between 0 and pi.
+    
+    Args:
+        x (Any): ufloat or float measured in radian
+    """
+    if type(x) is ufloat:
+        temp = ufloat(0, 0)
+        temp.value = math.acos(x.value)
+        temp.uncertainty = x.uncertainty/math.sqrt(1-x.value**2)
+        return temp
+    
+    elif type(x) is list or type(x) is numpy.ndarray:
+        return numpy.array([acos(iter) for iter in x])
+    
+    else:
+        return math.acos(x)
+
+def atan(x):
+    """Return the arc tangent.\nThe result is between -pi/2 and pi/2.
+    
+    Args:
+        x (Any): ufloat or float measured in radian
+    """
+    if type(x) is ufloat:
+        temp = ufloat(0, 0)
+        temp.value = math.atan(x.value)
+        temp.uncertainty = x.uncertainty/(x.value**2 + 1)
+        return temp
+    
+    elif type(x) is list or type(x) is numpy.ndarray:
+        return numpy.array([atan(iter) for iter in x])
+    
+    else:
+        return math.atan(x)
+
+#hyperbolic function
+def sinh(x):
+    """sinh
+    
+    Args:
+        x (Any): ufloat or float measured in radian
+    """
+    if type(x) is ufloat:
+        temp = ufloat(0, 0)
+        temp.value = math.sinh(x.value)
+        temp.uncertainty = x.uncertainty*math.cosh(x.value)
+        return temp
+    
+    elif type(x) is list or type(x) is numpy.ndarray:
+        return numpy.array([sinh(iter) for iter in x])
+    
+    else:
+        return math.sinh(x)
+
+def cosh(x):
+    """cosh
+    
+    Args:
+        x (Any): ufloat or float measured in radian
+    """
+    if type(x) is ufloat:
+        temp = ufloat(0, 0)
+        temp.value = math.cosh(x.value)
+        temp.uncertainty = abs(x.uncertainty*math.sinh(x.value))
+        return temp
+    
+    elif type(x) is list or type(x) is numpy.ndarray:
+        return numpy.array([cosh(iter) for iter in x])
+    
+    else:
+        return math.cosh(x)
+
+def tanh(x):
+    """tanh
+    
+    Args:
+        x (Any): ufloat or float measured in radian
+    """
+    if type(x) is ufloat:
+        temp = ufloat(0, 0)
+        temp.value = math.tanh(x.value)
+        temp.uncertainty = x.uncertainty/math.cos(x.value)**2
+        return temp
+    
+    elif type(x) is list or type(x) is numpy.ndarray:
+        return numpy.array([tanh(iter) for iter in x])
+    
+    else:
+        return math.tanh(x)
+    
 class ufunc:
     def __init__(self, function, symbols:list):
         """sympy based ufloat function
