@@ -478,7 +478,7 @@ def tanh(x):
     if type(x) is ufloat:
         temp = ufloat(0, 0)
         temp.value = math.tanh(x.value)
-        temp.uncertainty = x.uncertainty/math.cos(x.value)**2
+        temp.uncertainty = x.uncertainty/math.cosh(x.value)**2
         return temp
     
     elif type(x) is list or type(x) is numpy.ndarray:
@@ -486,6 +486,60 @@ def tanh(x):
     
     else:
         return math.tanh(x)
+
+def csch(x):
+    """csch
+    
+    Args:
+        x (Any): ufloat or float measured in radian
+    """
+    if type(x) is ufloat:
+        temp = ufloat(0, 0)
+        temp.value = 1/math.sinh(x.value)
+        temp.uncertainty = abs(x.uncertainty*math.cosh(x.value)/math.sinh(x.value)**2)
+        return temp
+    
+    elif type(x) is list or type(x) is numpy.ndarray:
+        return numpy.array([csch(iter) for iter in x])
+    
+    else:
+        return 1/math.sinh(x)
+    
+def sech(x):
+    """sech
+    
+    Args:
+        x (Any): ufloat or float measured in radian
+    """
+    if type(x) is ufloat:
+        temp = ufloat(0, 0)
+        temp.value = 1/math.cosh(x.value)
+        temp.uncertainty = abs(x.uncertainty*math.sinh(x.value)/math.cosh(x.value)**2)
+        return temp
+    
+    elif type(x) is list or type(x) is numpy.ndarray:
+        return numpy.array([sech(iter) for iter in x])
+    
+    else:
+        return 1/math.cosh(x)
+
+def coth(x):
+    """coth
+    
+    Args:
+        x (Any): ufloat or float measured in radian
+    """
+    if type(x) is ufloat:
+        temp = ufloat(0, 0)
+        temp.value = 1/math.tanh(x.value)
+        temp.uncertainty = abs(x.uncertainty/math.sinh(x.value)**2)
+        return temp
+    
+    elif type(x) is list or type(x) is numpy.ndarray:
+        return numpy.array([coth(iter) for iter in x])
+    
+    else:
+        return 1/math.tanh(x)
     
 class ufunc:
     def __init__(self, function, symbols:list):
