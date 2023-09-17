@@ -1,6 +1,7 @@
 import math
 import numpy
 import sympy
+import pandas
 
 def _round_trad(value:float, n:int=0):
     if n < 0: n = 0
@@ -573,3 +574,25 @@ class ufunc:
     
     def f(self, ufloats:list, unit = ''):
         return self.caculate(ufloats, unit)
+
+class utable:
+    def __init__(self, *cols:ufloat):
+        
+        self.cols = cols
+    
+    def to_pandas(self):
+        return pandas.DataFrame({key:value for key, value in enumerate(self.cols)})
+    
+    def to_latex(self, Data_only = True):
+        if Data_only is False:
+            return self.to_pandas().to_latex()
+        
+        else:
+            data = numpy.array(self.cols)
+            temp = str('')
+            for iter in data:
+                string = str(iter[0])
+                for i in range(1, len(iter)):
+                    string += " & " + str(iter[i])
+                temp += string + " \cr\n"
+            return temp
