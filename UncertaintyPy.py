@@ -24,7 +24,7 @@ def _is_numpy_float(value):
         if flag is True: break
     return flag
 
-
+#나중에 uarray, undarray를 warping으로 만들자 a.value로 numpy array로 내보낼 수 있게, 상속을 할려니 numpy를 이해하고 있어야 함
 class ufloat:    
     def __init__(self, value, uncertainty, unit:str = '') -> None:
         if not type(unit) is str:
@@ -633,6 +633,8 @@ class uMSL:
         _b = numpy.mean(Y)-_a*numpy.mean(X)
         
         n = len(X)
+        if n < 3:
+            raise ValueError("The number of data must be more than 2")
         self.s = numpy.sqrt(numpy.sum((Y-(_a*X+_b))**2)/(n-2)) #standard distrubution
         
         _ua = float(self.s*numpy.sqrt(n/(n*numpy.sum(X**2)-(numpy.sum(X))**2)))
