@@ -10,16 +10,33 @@ def _round_trad(value:float, n:int=0):
     else:
         return int(value*pow(10, n) - 0.5)/pow(10, n)
 
+def _is_numpy_int(value):
+    flag = False
+    for iter in [numpy.int_, numpy.int0, numpy.int8, numpy.int16, numpy.int32, numpy.int64, numpy.intc]:
+        flag = flag or (type(value) is iter)
+        if flag is True: break
+    return flag
+
+def _is_numpy_float(value):
+    flag = False
+    for iter in [numpy.float_, numpy.float16, numpy.float32, numpy.float64]:
+        flag = flag or (type(value) is iter)
+        if flag is True: break
+    return flag
+
+
 class ufloat:    
-    def __init__(self, value:numpy.float64, uncertainty:numpy.float64, unit:str = '') -> None:
+    def __init__(self, value, uncertainty, unit:str = '') -> None:
         if not type(unit) is str:
             raise TypeError("unit must be str")
         
         if not(type(value) is float or type(value) is int):
-            raise TypeError("value must be number")
+            if not (_is_numpy_int(value) or _is_numpy_float(value)):
+                raise TypeError("value must be number")
         
         if not(type(uncertainty) is float or type(uncertainty) is int):
-            raise TypeError("uncertainty must be number")
+            if not (_is_numpy_int(value) or _is_numpy_float(value)):
+                raise TypeError("uncertainty must be number")
         
         if uncertainty < 0:
             raise ValueError("uncertainty must be unsigned number")
@@ -596,3 +613,45 @@ class utable:
                     string += " & " + str(iter[i])
                 temp += string + " \cr\n"
             return temp
+
+class uMSL:
+    def __init__(self, x:numpy.ndarray, y:numpy.ndarray):
+        if not(type(x) is numpy.ndarray and type(y) is numpy.ndarray):
+            raise TypeError("x, y must be numpy.ndarray")
+        
+        if type(x[0]) is ufloat:
+            X = numpy.array([iter.value for iter in x])
+        else:
+            X = x
+        
+        if type(y[0]) is ufloat:
+            Y = numpy.array([iter.value for iter in y])
+        else:
+            Y = y
+        
+        _a = (numpy.mean(X*Y)-numpy.mean(X)*numpy.mean(Y))/(numpy.mean(X**2)-(numpy.mean(X))**2)
+        _b = numpy.mean(Y)-_a*numpy.mean(X)
+        
+        n = len(X)
+        self.s = numpy.sqrt(numpy.sum((Y-(_a*X+_b))**2)/(n-2)) #standard distrubution
+        
+        _ua = float(self.s*numpy.sqrt(n/(n*numpy.sum(X**2)-(numpy.sum(X))**2)))
+        _ub = float(self.s*numpy.sqrt(numpy.sum(X**2)/(n*numpy.sum(X**2)-(numpy.sum(X))**2)))
+        
+        self.mse = numpy.mean((Y-(_a*X+_b))**2)
+        self.rmse = numpy.sqrt(self.mse)
+        
+        self.a = ufloat(_a, _ua)
+        self.b = ufloat(_b, _ub)
+        
+    def fit(self):
+        return (self.a, self.b)
+    
+    def Std(self):
+        return self.s
+    
+    def Mse(self):
+        return self.mse
+    
+    def Rmse(self):
+        return self.rmse
