@@ -607,7 +607,7 @@ class utable:
         else:
             data = numpy.array(self.cols)
             temp = str('')
-            for iter in data:
+            for iter in data.T:
                 string = str(iter[0])
                 for i in range(1, len(iter)):
                     string += " & " + str(iter[i])
