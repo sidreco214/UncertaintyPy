@@ -250,10 +250,10 @@ class undarray(numpy.ndarray):
         if obj is None: return
         self.info = getattr(obj, "info", None)
     
-    def value(self):
+    def get_value(self):
         return numpy.array([x.value for x in self])
     
-    def uncertainty(self):
+    def get_uncertainty(self):
         return numpy.array([x.uncertainty for x in self])
     
     def set_unit(self, unit:str):
@@ -749,10 +749,10 @@ class utable:
 class uMSL:
     def __init__(self, x:undarray, y:undarray):
         
-        if type(x) is undarray: X = x.value()
+        if type(x) is undarray: X = x.get_value()
         else: raise TypeError("x must be undarray or numpy.ndarray")
         
-        if type(y) is undarray: Y = y.value()
+        if type(y) is undarray: Y = y.get_value()
         else: raise TypeError("y must be undarray or numpy.ndarray")
         
         _a = (numpy.mean(X*Y)-numpy.mean(X)*numpy.mean(Y))/(numpy.mean(X**2)-(numpy.mean(X))**2)
