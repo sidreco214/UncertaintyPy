@@ -3,7 +3,16 @@ import numpy
 import sympy
 import pandas
 
-def _round_trad(value:float, n:int=0):
+def _round_trad(value:float, n:int=0)->float:
+    """traditional round
+
+    Args:
+        value (float): value
+        n (int, optional): The digit of display under decimical point. Defaults to 0.
+
+    Returns:
+        float: Result
+    """
     if n < 0: n = 0
     if value > 0:
         return int(value*pow(10, n) + 0.5)/pow(10, n)
@@ -24,7 +33,7 @@ def _is_numpy_float(value):
         if flag is True: break
     return flag
 
-#나중에 uarray, undarray를 warping으로 만들자 a.value로 numpy array로 내보낼 수 있게, 상속을 할려니 numpy를 이해하고 있어야 함
+#나중에 uarray, undarray를 warping으로 만들자 a.value로 numpy array로 내보낼 수 있게
 class ufloat:    
     def __init__(self, value, uncertainty, unit:str = '') -> None:
         if not type(unit) is str:
@@ -76,32 +85,35 @@ class ufloat:
     
     def __parsing_to_str(self):
         n = 0
-        if _round_trad(self.uncertainty) < 1.0:
-            while _round_trad(self.uncertainty, n) == 0:n+=1
+        if _round_trad(self.uncertainty) <= 1.0:
+            while pow(10, -n) >= self.uncertainty: n+=1
             
             if n < 4:
-                num = _round_trad(self.value, n)
                 unum = _round_trad(self.uncertainty, n)
+                if pow(10, -n+1) <= unum: n-=1 #반올림되어 unum 소숫점 자릿수 감소할 수 있음
+                num = _round_trad(self.value, n)
+                
                 decinum = len(str(num))-len(str(int(num)))-1 #num의 소숫점 자릿수 = char수 - 정수부 - 소수점
                 if decinum < n: num = str(num) + '0'*(n-decinum) #불확도와 소숫점 자릿수 맞추기, 반올림되면 2.1 ± 0.01이 될 수 있음
-                return num, unum, 0
+                if unum < 1.0: return str(num), str(unum), 0
+                else:          return str(int(num)), str(int(unum)), 0
             
             else:
                 num = int(_round_trad(self.value*pow(10, n)))
                 unum = int(_round_trad(self.uncertainty*pow(10, n)))
-                return num, unum, n
+                return str(num), str(unum), n
         
         elif _round_trad(self.uncertainty) < 10.0:
             unum = int(_round_trad(self.uncertainty))
             num = int(_round_trad(self.value))
-            return num, unum, 0
+            return str(num), str(unum), 0
         
         else:
             while self.uncertainty/pow(10, n) >= 1.0: n+=1 #불확도가 10의 거듭제곱인 경우 1.0이 나올 수 있으니
             if n > 1: n-=1
             num = int(_round_trad(self.value/pow(10,n)))
             unum = int(_round_trad(self.uncertainty/pow(10,n)))
-            return num, unum, n
+            return str(num), str(unum), n
     
     def __str__(self):
         if self.uncertainty == 0.0:
