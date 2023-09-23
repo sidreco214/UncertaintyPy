@@ -33,7 +33,6 @@ def _is_numpy_float(value):
         if flag is True: break
     return flag
 
-#나중에 uarray, undarray를 warping으로 만들자 a.value로 numpy array로 내보낼 수 있게
 class ufloat:    
     def __init__(self, value, uncertainty, unit:str = '') -> None:
         if not type(unit) is str:
@@ -238,29 +237,83 @@ class ufloat:
         temp.uncertainty = abs(n*(self.value)**(n-1))*self.uncertainty
         return temp
 
-def set_unit(x:ufloat, unit:str):
+class undarray(numpy.ndarray):
+    def __new__(cls, input_array, info=None):
+        if not type(input_array[0]) is ufloat:
+            raise TypeError("element must be ufloat and 1D")
+        
+        obj = numpy.asarray(input_array).view(cls)
+        obj.info = info
+        return obj
+    
+    def __array_finalize__(self, obj):
+        if obj is None: return
+        self.info = getattr(obj, "info", None)
+    
+    def value(self):
+        return numpy.array([x.value for x in self])
+    
+    def uncertainty(self):
+        return numpy.array([x.uncertainty for x in self])
+    
+    def set_unit(self, unit:str):
+        if not type(unit) is str:
+            raise TypeError("unit must be str")
+        
+        return uarray([x.set_unit(unit) for x in self])
+
+def uarray(lis):
+    return undarray(numpy.array(lis))
+
+def set_unit(x:ufloat | list | undarray, unit:str):
     if type(x) is ufloat:
         x.unit = unit
         return x
-    elif type(x) is list or type(x) is numpy.ndarray:
-        return numpy.array([set_unit(i, unit) for i in x])
-    else: raise TypeError("Error Type")    
+    
+    elif type(x) is list:
+        if type(x[0]) is ufloat:
+            return [set_unit(iter, unit) for iter in x]
+    
+    elif type(x) is undarray:
+        return uarray([set_unit(i, unit) for i in x])
+    else: raise TypeError("Error Type") 
+
+#undarray caculation
+def sum(x:undarray):
+    if not type(x) is undarray:
+        raise TypeError("x must be undarray")
+    
+    temp = ufloat(0, 0)
+    for iter in x:
+        temp += iter
+    
+    return temp
+
+def mean(x:undarray):
+    if not type(x) is undarray:
+        raise TypeError("x must be undarray")
+    
+    return sum(x)/len(x)   
 
 #expotential and logarithm
-def exp(x):
+def exp(x:ufloat | list | undarray | float):
     if type(x) is ufloat:
         temp = ufloat(0, 0)
         temp.value = math.exp(x.value)
         temp.uncertainty = temp.value * x.uncertainty
         return temp
     
-    elif type(x) is list or type(x) is numpy.ndarray:
-        return numpy.array([exp(iter) for iter in x])
+    elif type(x) is list:
+        if type(x[0]) is ufloat:
+            return uarray([exp(iter) for iter in x])
+    
+    elif type(x) is undarray:
+        return uarray([exp(iter) for iter in x])
     
     else:
         return math.exp(x)
 
-def log(x, base = math.e):
+def log(x:ufloat | list | undarray | float, base = math.e):
     if type(x) is ufloat:
         if x.value <= 0.0: raise ValueError("math domain error")
         temp = ufloat(0, 0)
@@ -268,21 +321,25 @@ def log(x, base = math.e):
         temp.uncertainty = abs(x.uncertainty/(x.value*math.log(base)))
         return temp
     
-    elif type(x) is list or type(x) is numpy.ndarray:
-        return numpy.array([log(iter) for iter in x])
+    elif type(x) is list:
+        if type(x[0]) is ufloat:
+            return uarray([log(iter) for iter in x])
+    
+    elif type(x) is undarray:
+        return uarray([log(iter) for iter in x])
     
     else:
         if x <= 0.0: raise ValueError("math domain error")
         return math.log(x, base)
 
-def log10(x):
+def log10(x:ufloat | list | undarray | float):
     return log(x, 10)
 
-def log2(x):
+def log2(x:ufloat | list | undarray | float):
     return log(x, 2)
 
 #sqrt
-def sqrt(x):
+def sqrt(x:ufloat | list | undarray | float):
     if type(x) is ufloat:
         if x.value < 0: raise ValueError("math domain error")
         temp = ufloat(0, 0)
@@ -290,15 +347,19 @@ def sqrt(x):
         temp.uncertainty = x.uncertainty/(2*temp.value)
         return temp
     
-    elif type(x) is list or type(x) is numpy.ndarray:
-        return numpy.array([sqrt(iter) for iter in x])
+    elif type(x) is list:
+        if type(x[0]) is ufloat:
+            return uarray([sqrt(iter) for iter in x])
+    
+    elif type(x) is undarray:
+        return uarray([sqrt(iter) for iter in x])
     
     else:
         if x < 0: raise ValueError("math domain error")
         return math.sqrt(x)
 
 #trigonometry function
-def sin(x):
+def sin(x:ufloat | list | undarray | float):
     """sin
 
     Args:
@@ -310,13 +371,17 @@ def sin(x):
         temp.uncertainty = abs(x.uncertainty * math.cos(x.value))
         return temp
     
-    elif type(x) is list or type(x) is numpy.ndarray:
-        return numpy.array([sin(iter) for iter in x])
+    elif type(x) is list:
+        if type(x[0]) is ufloat:
+            return uarray([sin(iter) for iter in x])
+    
+    elif type(x) is undarray:
+        return uarray([sin(iter) for iter in x])
     
     else:
         return math.sin(x)
 
-def cos(x):
+def cos(x:ufloat | list | undarray | float):
     """cos
 
     Args:
@@ -328,13 +393,17 @@ def cos(x):
         temp.uncertainty = abs(math.sin(x.value) * x.uncertainty)
         return temp
     
-    elif type(x) is list or type(x) is numpy.ndarray:
-        return numpy.array([cos(iter) for iter in x])
+    elif type(x) is list:
+        if type(x[0]) is ufloat:
+            return uarray([cos(iter) for iter in x])
+    
+    elif type(x) is undarray:
+        return uarray([cos(iter) for iter in x])
     
     else:
         return math.cos(x)
 
-def tan(x):
+def tan(x:ufloat | list | undarray | float):
     """tan
 
     Args:
@@ -346,13 +415,17 @@ def tan(x):
         temp.uncertainty = abs(x.uncertainty/math.cos(x.value)**2)
         return temp
     
-    elif type(x) is list or type(x) is numpy.ndarray:
-        return numpy.array([tan(iter) for iter in x])
+    elif type(x) is list:
+        if type(x[0]) is ufloat:
+            return uarray([tan(iter) for iter in x])
+    
+    elif type(x) is undarray:
+        return uarray([tan(iter) for iter in x])
     
     else:
         return math.tan(x)
 
-def csc(x):
+def csc(x:ufloat | list | undarray | float):
     """csc
     
     Args:
@@ -364,14 +437,18 @@ def csc(x):
         temp.uncertainty = abs(x.uncertainty*math.cos(x.value)/(math.sin(x.value))**2)
         return temp
     
-    elif type(x) is list or type(x) is numpy.ndarray:
-        return numpy.array([csc(iter) for iter in x])
+    elif type(x) is list:
+        if type(x[0]) is ufloat:
+            return uarray([csc(iter) for iter in x])
+    
+    elif type(x) is undarray:
+        return uarray([csc(iter) for iter in x])
     
     else:
         return 1/math.sin(x)
 
 
-def sec(x):
+def sec(x:ufloat | list | undarray | float):
     """sec
     
     Args:
@@ -383,13 +460,17 @@ def sec(x):
         temp.uncertainty = abs(x.uncertainty*math.sin(x.value)/(math.cos(x.value))**2)
         return temp
     
-    elif type(x) is list or type(x) is numpy.ndarray:
-        return numpy.array([sec(iter) for iter in x])
+    elif type(x) is list:
+        if type(x[0]) is ufloat:
+            return uarray([sec(iter) for iter in x])
+    
+    elif type(x) is undarray:
+        return uarray([sec(iter) for iter in x])
     
     else:
         return 1/math.cos(x)
 
-def cot(x):
+def cot(x:ufloat | list | undarray | float):
     """cot
     
     Args:
@@ -401,14 +482,18 @@ def cot(x):
         temp.uncertainty = abs(x.uncertainty/math.sin(x.value)**2)
         return temp
     
-    elif type(x) is list or type(x) is numpy.ndarray:
-        return numpy.array([cot(iter) for iter in x])
+    elif type(x) is list:
+        if type(x[0]) is ufloat:
+            return uarray([cot(iter) for iter in x])
+    
+    elif type(x) is undarray:
+        return uarray([cot(iter) for iter in x])
     
     else:
         return 1/math.tan(x)
 
 #inverse trigonometry function
-def asin(x):
+def asin(x:ufloat | list | undarray | float):
     """Return the arc sine\nThe result is between -pi/2 and pi/2
     
     Args:
@@ -420,13 +505,17 @@ def asin(x):
         temp.uncertainty = x.uncertainty/math.sqrt(1-x.value**2)
         return temp
     
-    elif type(x) is list or type(x) is numpy.ndarray:
-        return numpy.array([asin(iter) for iter in x])
+    elif type(x) is list:
+        if type(x[0]) is ufloat:
+            return uarray([asin(iter) for iter in x])
+    
+    elif type(x) is undarray:
+        return uarray([asin(iter) for iter in x])
     
     else:
         return math.asin(x)
 
-def acos(x):
+def acos(x:ufloat | list | undarray | float):
     """Return the arc cosine.\nThe result is between 0 and pi.
     
     Args:
@@ -438,13 +527,17 @@ def acos(x):
         temp.uncertainty = x.uncertainty/math.sqrt(1-x.value**2)
         return temp
     
-    elif type(x) is list or type(x) is numpy.ndarray:
-        return numpy.array([acos(iter) for iter in x])
+    elif type(x) is list:
+        if type(x[0]) is ufloat:
+            return uarray([acos(iter) for iter in x])
+    
+    elif type(x) is undarray:
+        return uarray([acos(iter) for iter in x])
     
     else:
         return math.acos(x)
 
-def atan(x):
+def atan(x:ufloat | list | undarray | float):
     """Return the arc tangent.\nThe result is between -pi/2 and pi/2.
     
     Args:
@@ -456,14 +549,18 @@ def atan(x):
         temp.uncertainty = x.uncertainty/(x.value**2 + 1)
         return temp
     
-    elif type(x) is list or type(x) is numpy.ndarray:
-        return numpy.array([atan(iter) for iter in x])
+    elif type(x) is list:
+        if type(x[0]) is ufloat:
+            return uarray([atan(iter) for iter in x])
+    
+    elif type(x) is undarray:
+        return uarray([atan(iter) for iter in x])
     
     else:
         return math.atan(x)
 
 #hyperbolic function
-def sinh(x):
+def sinh(x:ufloat | list | undarray | float):
     """sinh
     
     Args:
@@ -475,13 +572,17 @@ def sinh(x):
         temp.uncertainty = x.uncertainty*math.cosh(x.value)
         return temp
     
-    elif type(x) is list or type(x) is numpy.ndarray:
-        return numpy.array([sinh(iter) for iter in x])
+    elif type(x) is list:
+        if type(x[0]) is ufloat:
+            return uarray([sinh(iter) for iter in x])
+    
+    elif type(x) is undarray:
+        return uarray([sinh(iter) for iter in x])
     
     else:
         return math.sinh(x)
 
-def cosh(x):
+def cosh(x:ufloat | list | undarray | float):
     """cosh
     
     Args:
@@ -493,13 +594,17 @@ def cosh(x):
         temp.uncertainty = abs(x.uncertainty*math.sinh(x.value))
         return temp
     
-    elif type(x) is list or type(x) is numpy.ndarray:
-        return numpy.array([cosh(iter) for iter in x])
+    elif type(x) is list:
+        if type(x[0]) is ufloat:
+            return uarray([cosh(iter) for iter in x])
+    
+    elif type(x) is undarray:
+        return uarray([cosh(iter) for iter in x])
     
     else:
         return math.cosh(x)
 
-def tanh(x):
+def tanh(x:ufloat | list | undarray | float):
     """tanh
     
     Args:
@@ -511,13 +616,17 @@ def tanh(x):
         temp.uncertainty = x.uncertainty/math.cosh(x.value)**2
         return temp
     
-    elif type(x) is list or type(x) is numpy.ndarray:
-        return numpy.array([tanh(iter) for iter in x])
+    elif type(x) is list:
+        if type(x[0]) is ufloat:
+            return uarray([tanh(iter) for iter in x])
+    
+    elif type(x) is undarray:
+        return uarray([tanh(iter) for iter in x])
     
     else:
         return math.tanh(x)
 
-def csch(x):
+def csch(x:ufloat | list | undarray | float):
     """csch
     
     Args:
@@ -529,13 +638,17 @@ def csch(x):
         temp.uncertainty = abs(x.uncertainty*math.cosh(x.value)/math.sinh(x.value)**2)
         return temp
     
-    elif type(x) is list or type(x) is numpy.ndarray:
-        return numpy.array([csch(iter) for iter in x])
+    elif type(x) is list:
+        if type(x[0]) is ufloat:
+            return uarray([csch(iter) for iter in x])
+    
+    elif type(x) is undarray:
+        return uarray([csch(iter) for iter in x])
     
     else:
         return 1/math.sinh(x)
     
-def sech(x):
+def sech(x:ufloat | list | undarray | float):
     """sech
     
     Args:
@@ -547,13 +660,17 @@ def sech(x):
         temp.uncertainty = abs(x.uncertainty*math.sinh(x.value)/math.cosh(x.value)**2)
         return temp
     
-    elif type(x) is list or type(x) is numpy.ndarray:
-        return numpy.array([sech(iter) for iter in x])
+    elif type(x) is list:
+        if type(x[0]) is ufloat:
+            return uarray([sech(iter) for iter in x])
+    
+    elif type(x) is undarray:
+        return uarray([sech(iter) for iter in x])
     
     else:
         return 1/math.cosh(x)
 
-def coth(x):
+def coth(x:ufloat | list | undarray | float):
     """coth
     
     Args:
@@ -565,8 +682,12 @@ def coth(x):
         temp.uncertainty = abs(x.uncertainty/math.sinh(x.value)**2)
         return temp
     
-    elif type(x) is list or type(x) is numpy.ndarray:
-        return numpy.array([coth(iter) for iter in x])
+    elif type(x) is list:
+        if type(x[0]) is ufloat:
+            return uarray([cot(iter) for iter in x])
+    
+    elif type(x) is undarray:
+        return uarray([coth(iter) for iter in x])
     
     else:
         return 1/math.tanh(x)
@@ -606,7 +727,6 @@ class ufunc:
 
 class utable:
     def __init__(self, *cols:ufloat):
-        
         self.cols = cols
     
     def to_pandas(self):
@@ -627,19 +747,13 @@ class utable:
             return temp
 
 class uMSL:
-    def __init__(self, x:numpy.ndarray, y:numpy.ndarray):
-        if not(type(x) is numpy.ndarray and type(y) is numpy.ndarray):
-            raise TypeError("x, y must be numpy.ndarray")
+    def __init__(self, x:undarray, y:undarray):
         
-        if type(x[0]) is ufloat:
-            X = numpy.array([iter.value for iter in x])
-        else:
-            X = x
+        if type(x) is undarray: X = x.value()
+        else: raise TypeError("x must be undarray or numpy.ndarray")
         
-        if type(y[0]) is ufloat:
-            Y = numpy.array([iter.value for iter in y])
-        else:
-            Y = y
+        if type(y) is undarray: Y = y.value()
+        else: raise TypeError("y must be undarray or numpy.ndarray")
         
         _a = (numpy.mean(X*Y)-numpy.mean(X)*numpy.mean(Y))/(numpy.mean(X**2)-(numpy.mean(X))**2)
         _b = numpy.mean(Y)-_a*numpy.mean(X)
@@ -669,3 +783,9 @@ class uMSL:
     
     def Rmse(self):
         return self.rmse
+    
+    def __str__(self):
+        return "y = ax + b, a={}, b={}, RMSE={}".format(self.a, self.b, self.rmse)
+    
+    def __repr__(self):
+        return self.__str__()
