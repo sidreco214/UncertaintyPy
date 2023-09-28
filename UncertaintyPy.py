@@ -33,8 +33,22 @@ def _is_numpy_float(value):
         if flag is True: break
     return flag
 
-class ufloat:    
-    def __init__(self, value, uncertainty, unit:str = '') -> None:
+class ufloat:
+    """Uncertainty float"""
+    def __init__(self, value:float, uncertainty:float, unit:str = '') -> None:
+        """Initialize ufloat class
+
+        Args:
+            value (float): value
+            uncertainty (float): uncertainty
+            unit (str, optional): displayed unit. Defaults to ''.
+
+        Raises:
+            TypeError: unit must be str
+            TypeError: value must be number
+            TypeError: uncertainty must be number
+            ValueError: uncertainty must be unsigned number
+        """
         if not type(unit) is str:
             raise TypeError("unit must be str")
         
@@ -233,6 +247,12 @@ class ufloat:
         return temp
 
 class undarray(numpy.ndarray):
+    """undarray\n
+    inherited from numpy.ndarray
+
+    Args:
+        numpy.ndarray (class): numpy's ndarray
+    """
     def __new__(cls, input_array, info=None):
         if not type(input_array[0]) is ufloat:
             raise TypeError("element must be ufloat and 1D")
@@ -257,10 +277,36 @@ class undarray(numpy.ndarray):
         
         return uarray([x.set_unit(unit) for x in self])
 
-def uarray(lis):
+def uarray(lis:list)->undarray:
+    """Return undarray
+
+    Args:
+        lis (list): list contained ufloat
+
+    Raises:
+        TypeError: lis must be list
+        TypeError: lis must contain ufloat
+
+    Returns:
+        undarray: undarray
+    """
+    if not type(lis) is list: raise TypeError("lis must be list")
+    if not type(lis[0]) is ufloat: raise TypeError("lis must contain ufloat") 
     return undarray(numpy.array(lis))
 
-def set_unit(x:ufloat | list | undarray, unit:str):
+def set_unit(x:ufloat | list | undarray, unit:str)->(ufloat | list | undarray | None):
+    """Set Unit
+
+    Args:
+        x (ufloat | list | undarray): target to set unit
+        unit (str): displayed unit
+
+    Raises:
+        TypeError: type error
+
+    Returns:
+        (ufloat | list | undarray | None): Result 
+    """
     if type(x) is ufloat:
         x.unit = unit
         return x
@@ -288,10 +334,13 @@ def mean(x:undarray):
     if not type(x) is undarray:
         raise TypeError("x must be undarray")
     
-    return sum(x)/len(x)   
+    return sum(x)/len(x)
+
+def average(x:undarray):
+    return mean(x)
 
 #expotential and logarithm
-def exp(x:ufloat | list | undarray | float):
+def exp(x:ufloat | undarray | float):
     if type(x) is ufloat:
         temp = ufloat(0, 0)
         temp.value = math.exp(x.value)
@@ -308,7 +357,7 @@ def exp(x:ufloat | list | undarray | float):
     else:
         return math.exp(x)
 
-def log(x:ufloat | list | undarray | float, base = math.e):
+def log(x:ufloat | undarray | float, base = math.e):
     if type(x) is ufloat:
         if x.value <= 0.0: raise ValueError("math domain error")
         temp = ufloat(0, 0)
@@ -327,14 +376,14 @@ def log(x:ufloat | list | undarray | float, base = math.e):
         if x <= 0.0: raise ValueError("math domain error")
         return math.log(x, base)
 
-def log10(x:ufloat | list | undarray | float):
+def log10(x:ufloat | undarray | float):
     return log(x, 10)
 
-def log2(x:ufloat | list | undarray | float):
+def log2(x:ufloat | undarray | float):
     return log(x, 2)
 
 #sqrt
-def sqrt(x:ufloat | list | undarray | float):
+def sqrt(x:ufloat | undarray | float):
     if type(x) is ufloat:
         if x.value < 0: raise ValueError("math domain error")
         temp = ufloat(0, 0)
@@ -354,7 +403,7 @@ def sqrt(x:ufloat | list | undarray | float):
         return math.sqrt(x)
 
 #trigonometry function
-def sin(x:ufloat | list | undarray | float):
+def sin(x:ufloat | undarray | float):
     """sin
 
     Args:
@@ -376,7 +425,7 @@ def sin(x:ufloat | list | undarray | float):
     else:
         return math.sin(x)
 
-def cos(x:ufloat | list | undarray | float):
+def cos(x:ufloat | undarray | float):
     """cos
 
     Args:
@@ -398,7 +447,7 @@ def cos(x:ufloat | list | undarray | float):
     else:
         return math.cos(x)
 
-def tan(x:ufloat | list | undarray | float):
+def tan(x:ufloat | undarray | float):
     """tan
 
     Args:
@@ -420,7 +469,7 @@ def tan(x:ufloat | list | undarray | float):
     else:
         return math.tan(x)
 
-def csc(x:ufloat | list | undarray | float):
+def csc(x:ufloat | undarray | float):
     """csc
     
     Args:
@@ -443,7 +492,7 @@ def csc(x:ufloat | list | undarray | float):
         return 1/math.sin(x)
 
 
-def sec(x:ufloat | list | undarray | float):
+def sec(x:ufloat | undarray | float):
     """sec
     
     Args:
@@ -465,7 +514,7 @@ def sec(x:ufloat | list | undarray | float):
     else:
         return 1/math.cos(x)
 
-def cot(x:ufloat | list | undarray | float):
+def cot(x:ufloat | undarray | float):
     """cot
     
     Args:
@@ -488,7 +537,7 @@ def cot(x:ufloat | list | undarray | float):
         return 1/math.tan(x)
 
 #inverse trigonometry function
-def asin(x:ufloat | list | undarray | float):
+def asin(x:ufloat | undarray | float):
     """Return the arc sine\nThe result is between -pi/2 and pi/2
     
     Args:
@@ -510,7 +559,7 @@ def asin(x:ufloat | list | undarray | float):
     else:
         return math.asin(x)
 
-def acos(x:ufloat | list | undarray | float):
+def acos(x:ufloat | undarray | float):
     """Return the arc cosine.\nThe result is between 0 and pi.
     
     Args:
@@ -532,7 +581,7 @@ def acos(x:ufloat | list | undarray | float):
     else:
         return math.acos(x)
 
-def atan(x:ufloat | list | undarray | float):
+def atan(x:ufloat | undarray | float):
     """Return the arc tangent.\nThe result is between -pi/2 and pi/2.
     
     Args:
@@ -555,7 +604,7 @@ def atan(x:ufloat | list | undarray | float):
         return math.atan(x)
 
 #hyperbolic function
-def sinh(x:ufloat | list | undarray | float):
+def sinh(x:ufloat | undarray | float):
     """sinh
     
     Args:
@@ -577,7 +626,7 @@ def sinh(x:ufloat | list | undarray | float):
     else:
         return math.sinh(x)
 
-def cosh(x:ufloat | list | undarray | float):
+def cosh(x:ufloat | undarray | float):
     """cosh
     
     Args:
@@ -599,7 +648,7 @@ def cosh(x:ufloat | list | undarray | float):
     else:
         return math.cosh(x)
 
-def tanh(x:ufloat | list | undarray | float):
+def tanh(x:ufloat  | undarray | float):
     """tanh
     
     Args:
@@ -621,7 +670,7 @@ def tanh(x:ufloat | list | undarray | float):
     else:
         return math.tanh(x)
 
-def csch(x:ufloat | list | undarray | float):
+def csch(x:ufloat | undarray | float):
     """csch
     
     Args:
@@ -643,7 +692,7 @@ def csch(x:ufloat | list | undarray | float):
     else:
         return 1/math.sinh(x)
     
-def sech(x:ufloat | list | undarray | float):
+def sech(x:ufloat | undarray | float):
     """sech
     
     Args:
@@ -665,7 +714,7 @@ def sech(x:ufloat | list | undarray | float):
     else:
         return 1/math.cosh(x)
 
-def coth(x:ufloat | list | undarray | float):
+def coth(x:ufloat | undarray | float):
     """coth
     
     Args:
