@@ -179,10 +179,7 @@ class ufloat:
         else:
             temp.value = other - self.value
             temp.uncertainty = self.uncertainty
-            temp.unit = self.unit
         return temp
-    
-    
     
     def mul(self, other):
         temp = ufloat(0, 0)
@@ -192,7 +189,6 @@ class ufloat:
         else:
             temp.value = self.value * other
             temp.uncertainty = self.uncertainty * other
-            temp.unit = self.unit
         return temp
     
     def __mul__(self, other):
@@ -210,7 +206,6 @@ class ufloat:
         else:
             temp.value = self.value / other
             temp.uncertainty = self.uncertainty / other
-            temp.unit = self.unit
         return temp
     
     def __truediv__(self, other):
@@ -746,7 +741,7 @@ class utable:
                 temp += string + " \cr\n"
             return temp
 
-class uMSL:
+class uMLS:
     def __init__(self, x:undarray, y:undarray):
         
         if type(x) is undarray: X = x.get_value()
