@@ -794,10 +794,10 @@ class uMLS:
     def __init__(self, x:undarray, y:undarray):
         
         if type(x) is undarray: X = x.get_value()
-        else: raise TypeError("x must be undarray or numpy.ndarray")
+        else: raise TypeError("x must be undarray")
         
         if type(y) is undarray: Y = y.get_value()
-        else: raise TypeError("y must be undarray or numpy.ndarray")
+        else: raise TypeError("y must be undarray")
         
         _a = (numpy.mean(X*Y)-numpy.mean(X)*numpy.mean(Y))/(numpy.mean(X**2)-(numpy.mean(X))**2)
         _b = numpy.mean(Y)-_a*numpy.mean(X)
