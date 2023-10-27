@@ -156,6 +156,9 @@ class ufloat:
         return temp
     
     def add(self, other):
+        if type(other) is undarray:
+            return other.add(self)
+        
         temp = ufloat(0, 0)
         if type(other) is ufloat:
             temp.value = self.value + other.value
@@ -173,6 +176,9 @@ class ufloat:
     
     
     def sub(self, other):
+        if type(other) is undarray:
+            return other.__rsub__(self)
+        
         temp = ufloat(0, 0)
         if type(other) is ufloat:
             temp.value = self.value - other.value
@@ -195,7 +201,11 @@ class ufloat:
             temp.uncertainty = self.uncertainty
         return temp
     
+    
     def mul(self, other):
+        if type(other) is undarray:
+            return other.mul(self)
+        
         temp = ufloat(0, 0)
         if type(other) is ufloat:
             temp.value = self.value * other.value
@@ -213,6 +223,9 @@ class ufloat:
     
     
     def div(self, other):
+        if type(other) is undarray:
+            return other.rdiv(self)
+        
         temp = ufloat(0, 0)
         if type(other) is ufloat:
             temp.value = self.value / other.value
@@ -226,6 +239,9 @@ class ufloat:
         return self.div(other)
     
     def rdiv(self, other):
+        if type(other) is undarray:
+            return other.div(self)
+        
         temp = ufloat(0, 0)
         if type(other) is ufloat:
             temp.value = other.value / self.value
@@ -276,6 +292,54 @@ class undarray(numpy.ndarray):
             raise TypeError("unit must be str")
         
         return uarray([x.set_unit(unit) for x in self])
+    
+    def add(self, other):
+        if not type(other) is ufloat: return numpy.ndarray.__add__(self, other)
+        else: return undarray(numpy.array([element + other for element in self]))
+    
+    def __add__(self, other):
+        return self.add(other)
+    
+    def __radd__(self, other):
+        return self.add(other)
+    
+    
+    def sub(self, other):
+        if not type(other) is ufloat: return numpy.ndarray.__sub__(self, other)
+        else: return undarray(numpy.array([element - other for element in self]))
+    
+    def __sub__(self, other):
+        return self.sub(other)
+    
+    def __rsub__(self, other):
+        return -self.sub(other)
+    
+    
+    def mul(self, other):
+        if not type(other) is ufloat: return numpy.ndarray.__mul__(self, other)
+        else: return undarray(numpy.array([element*other for element in self]))
+    
+    def __mul__(self, other):
+        return self.mul(other)
+    
+    def __rmul__(self, other):
+        return self.mul(other)
+    
+    
+    def div(self, other):
+        if not type(other) is ufloat: return numpy.ndarray.__truediv__(self, other)
+        else: return undarray(numpy.array([element/other for element in self]))
+    
+    def __truediv__(self, other):
+        return self.div(other)
+    
+    def rdiv(self, other):
+        if not type(other) is ufloat: return numpy.ndarray.__rtruediv__(self, other)
+        else:return undarray(numpy.array([other/element for element in self]))
+    
+    def __rtruediv__(self, other):
+        return self.rdiv(other)
+
 
 def uarray(lis:list)->undarray:
     """Return undarray
