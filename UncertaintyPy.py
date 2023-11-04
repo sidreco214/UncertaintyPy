@@ -112,6 +112,9 @@ class ufloat:
                 else:          return str(int(num)), str(int(unum)), 0
             
             else:
+                unum = int(_round_trad(self.uncertainty*pow(10, n))) #self.uncertainty*pow(10, n) = 9.8인 경우 반올림하면 10되니
+                if unum >= 10: n-=1
+                
                 num = int(_round_trad(self.value*pow(10, n)))
                 unum = int(_round_trad(self.uncertainty*pow(10, n)))
                 return str(num), str(unum), n
