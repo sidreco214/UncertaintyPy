@@ -93,8 +93,8 @@ class ufloat:
             else: return f"$({num} \pm {unum})\\times 10\ \mathrm{{{self.unit}}}$"
         
         else:
-            if self.unit == '': return f"$({num} \pm {unum})\ \\times 10^{{{n}}}$"
-            else: return f"$({num} \pm {unum})\ \\times 10^{{{n}}}\ \mathrm{{{self.unit}}}$"
+            if self.unit == '': return f"$({num} \pm {unum}) \\times 10^{{{n}}}$"
+            else: return f"$({num} \pm {unum})\\times 10^{{{n}}}\ \mathrm{{{self.unit}}}$"
     
     def __parsing_to_str(self):
         n = 0
@@ -851,9 +851,9 @@ class utable:
             data = numpy.array(self.cols)
             temp = str('')
             for iter in data.T:
-                string = str(iter[0])
+                string = iter[0].to_latex()
                 for i in range(1, len(iter)):
-                    string += " & " + str(iter[i])
+                    string += " & " + iter[i].to_latex()
                 temp += string + " \cr\n"
             return temp
 
