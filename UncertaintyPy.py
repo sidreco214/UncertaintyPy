@@ -406,6 +406,46 @@ def mean(x:undarray):
 def average(x:undarray):
     return mean(x)
 
+def std_p(x:undarray)->float:
+    """Caculate Population Standard Distribution
+
+    Args:
+        x (undarray): undarray
+
+    Raises:
+        TypeError: x must be undarray
+        ValueError: undarray must be contained 2 or more elements
+
+    Returns:
+        float: Population Standard Distribution
+    """
+    if not type(x) is undarray:
+        raise TypeError("x must be undarray")
+    m = mean(x)
+    n = len(x)
+    if n < 2: raise ValueError("undarray must be contained 2 or more elements")
+    return sum((x - m)**2)/n
+
+def std_s(x:undarray)->float:
+    """Caculate Sample Standard Distribution
+
+    Args:
+        x (undarray): undarray
+
+    Raises:
+        TypeError: x must be undarray
+        ValueError: undarray must be contained 2 or more elements
+
+    Returns:
+        float: Sample Standard Distribution
+    """
+    if not type(x) is undarray:
+        raise TypeError("x must be undarray")
+    m = mean(x)
+    n = len(x)
+    if n < 2: raise ValueError("undarray must be contained 2 or more elements")
+    return sum((x - m)**2)/(n-1)
+
 #expotential and logarithm
 def exp(x:ufloat | undarray | float):
     if type(x) is ufloat:
