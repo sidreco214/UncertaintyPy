@@ -79,9 +79,13 @@ class ufloat:
             if self.unit == '': return f"({num} ± {unum})x10"
             else: return f"({num} ± {unum})x10 " + self.unit
         
-        else:
+        elif n > 0:
             if self.unit == '': return f"({num} ± {unum})x10^{n}"
             else: return f"({num} ± {unum})x10^{n} " + self.unit
+        
+        else:
+            if self.unit == '': return f"({num} ± {unum})x10^({n})"
+            else: return f"({num} ± {unum})x10^({n}) " + self.unit
     
     def __get_ustr_latex(self, num:str, unum:str, n:int)->str:
         if n == 0:
@@ -117,7 +121,7 @@ class ufloat:
                 
                 num = int(_round_trad(self.value*pow(10, n)))
                 unum = int(_round_trad(self.uncertainty*pow(10, n)))
-                return str(num), str(unum), n
+                return str(num), str(unum), -n
         
         elif _round_trad(self.uncertainty) < 10.0:
             unum = int(_round_trad(self.uncertainty))
@@ -141,8 +145,13 @@ class ufloat:
             return self.__get_ustr(num, unum, n)         
     
     def to_latex(self)->str:
-        num, unum, n = self.__parsing_to_str()
-        return self.__get_ustr_latex(num, unum, n)
+        if self.uncertainty == 0.0:
+            if self.unit == '':
+                return str(self.value)
+            else: return "{} {}".format(self.value, self.unit)
+        else:
+            num, unum, n = self.__parsing_to_str()
+            return self.__get_ustr_latex(num, unum, n)
     
     def set_unit(self, unit:str):
         self.unit = unit
@@ -424,7 +433,7 @@ def std_p(x:undarray)->float:
     m = mean(x)
     n = len(x)
     if n < 2: raise ValueError("undarray must be contained 2 or more elements")
-    return sum((x - m)**2)/n
+    return sqrt(sum((x - m)**2)/n)
 
 def std_s(x:undarray)->float:
     """Caculate Sample Standard Distribution
@@ -444,7 +453,7 @@ def std_s(x:undarray)->float:
     m = mean(x)
     n = len(x)
     if n < 2: raise ValueError("undarray must be contained 2 or more elements")
-    return sum((x - m)**2)/(n-1)
+    return sqrt(sum((x - m)**2)/(n-1))
 
 #expotential and logarithm
 def exp(x:ufloat | undarray | float):
