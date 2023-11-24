@@ -148,7 +148,7 @@ class ufloat:
         if self.uncertainty == 0.0:
             if self.unit == '':
                 return str(self.value)
-            else: return "{} {}".format(self.value, self.unit)
+            else: return "${}\ \mathrm{{{}}}$".format(self.value, self.unit)
         else:
             num, unum, n = self.__parsing_to_str()
             return self.__get_ustr_latex(num, unum, n)
